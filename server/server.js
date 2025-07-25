@@ -4,10 +4,13 @@ const dotenv = require('dotenv');
 const resumeRoutes = require('./routes/resumeRoutes');
 const { initDatabase } = require('./config/database');
 
-dotenv.config();
+// dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+dotenv.config({ path: envFile });
 
 // CORS configuration for production
 const corsOptions = {
