@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1976d2" />
+    <meta
+      name="description"
+      content="AI-powered resume analyzer using Google Gemini. Upload your resume and get instant feedback, ratings, and improvement suggestions."
+    />
+    <meta name="keywords" content="resume, analyzer, AI, Gemini, career, job, CV analysis" />
+    <meta property="og:title" content="Resume Analyzer - AI-Powered Resume Analysis" />
+    <meta property="og:description" content="Get instant AI feedback on your resume with our advanced analysis tool powered by Google Gemini." />
+    <meta property="og:type" content="website" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <title>Resume Analyzer - AI-Powered Resume Analysis</title>
+    
+    <style>
+      /* Loading screen styles */
+      #root {
+        min-height: 100vh;
+      }
+      
+      .app-loader {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f5f5f5;
+      }
+      
+      .app-loader.hide {
+        display: none;
+      }
+      
+      .loader-content {
+        text-align: center;
+      }
+      
+      .loader-icon {
+        font-size: 48px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      
+      .loader-text {
+        margin-top: 16px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 18px;
+        color: #333;
+        font-weight: 500;
+      }
+      
+      .loader-spinner {
+        margin-top: 20px;
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #1976d2;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.1);
+          opacity: 0.7;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* No script message */
+      noscript {
+        display: block;
+        text-align: center;
+        padding: 50px 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: #333;
+        background-color: #fff3cd;
+        border-bottom: 1px solid #ffeaa7;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <strong>JavaScript Required</strong><br>
+      You need to enable JavaScript to run this application. Resume Analyzer requires JavaScript for file processing and AI analysis features.
+    </noscript>
+    
+    <!-- Loading screen -->
+    <div id="app-loader" class="app-loader">
+      <div class="loader-content">
+        <div class="loader-icon">📄</div>
+        <div class="loader-text">Resume Analyzer</div>
+        <div class="loader-spinner"></div>
+      </div>
+    </div>
+    
+    <div id="root"></div>
+    
+    <script>
+      // Hide loader when React app loads
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const loader = document.getElementById('app-loader');
+          if (loader) {
+            loader.classList.add('hide');
+          }
+        }, 500);
+      });
+      
+      // Register service worker for PWA capabilities (optional)
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('%PUBLIC_URL%/service-worker.js')
+            .then(registration => console.log('SW registered:', registration))
+            .catch(error => console.log('SW registration failed:', error));
+        });
+      }
+    </script>
+  </body>
+</html>
