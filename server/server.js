@@ -9,94 +9,100 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Check required environment variables
-if (!process.env.GEMINI_API_KEY) {
-  console.error('ERROR: GEMINI_API_KEY is not set in .env file');
-  process.exit(1);
-}
-
-if (!process.env.DATABASE_URL) {
-  console.error('ERROR: DATABASE_URL is not set in .env file');
-  process.exit(1);
-}
-
-// CORS configuration - be specific
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+// CORS configuration for production
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://resume-analyzer.vercel.app', // Your Vercel URL
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'DELETE', 'PUT', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
+};
 
-// Body parsing middleware
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
+// Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  if (req.method === 'POST' && req.path.includes('upload')) {
-    console.log('Upload request headers:', req.headers);
-  }
   next();
 });
 
-// Initialize database
-initDatabase().catch(err => {
-  console.error('Failed to initialize database:', err);
-  process.exit(1);
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Resume Analyzer API',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Routes
 app.use('/api/resumes', resumeRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+// Health check
+app.get('/api/health', async (req, res) => {
+  const health = {
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: {
-      nodeVersion: process.version,
-      hasGeminiKey: !!process.env.GEMINI_API_KEY,
-      hasDatabase: !!process.env.DATABASE_URL
+    environment: process.env.NODE_ENV || 'development',
+    services: {
+      server: true,
+      gemini: !!process.env.GEMINI_API_KEY,
+      database: false
     }
-  });
-});
-
-// Multer error handling
-app.use((error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    console.error('Multer error:', error);
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ 
-        error: 'File too large',
-        details: 'File size must be less than 5MB'
-      });
-    }
-    return res.status(400).json({ 
-      error: 'File upload error',
-      details: error.message 
-    });
+  };
+  
+  try {
+    const { pool } = require('./config/database');
+    await pool.query('SELECT 1');
+    health.services.database = true;
+  } catch (error) {
+    health.services.database = false;
   }
-  next(error);
+  
+  res.json(health);
 });
 
-// Global error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
+  console.error('Error:', err);
   res.status(500).json({ 
     error: 'Something went wrong!',
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    message: err.message 
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`
-    🚀 Server running on port ${PORT}
-    📍 API endpoint: http://localhost:${PORT}/api
-    🔥 Environment: ${process.env.NODE_ENV || 'development'}
-    ✅ Gemini API Key: ${process.env.GEMINI_API_KEY ? 'Configured' : 'Missing'}
-    ✅ Database: ${process.env.DATABASE_URL ? 'Configured' : 'Missing'}
-  `);
-});
+// Start server
+const startServer = async () => {
+  try {
+    await initDatabase();
+    console.log('✅ Database initialized');
+  } catch (error) {
+    console.error('⚠️ Database initialization failed:', error.message);
+  }
+  
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Server running on port ${PORT}`);
+  });
+};
+
+startServer();
